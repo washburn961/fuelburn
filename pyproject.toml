@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fuelburn"
+version = "0.1.0"
+description = "Fuel burn calculation package"
+requires-python = ">=3.7"
+dependencies = [
+    "ambiance",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
