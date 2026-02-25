@@ -1,12 +1,18 @@
-from .mission_profile import (
-    MissionProfile,
+from .simulation import (
+    Simulation,
+    Aerodynamics,
+    Propulsion,
+    SpeedProfile,
     ClimbProfile,
     CruiseProfile,
-    DescentProfile,
+    DescentProfile
 )
 
 __all__ = [
-    "MissionProfile",
+    "Simulation",
+    "Aerodynamics",
+    "Propulsion",
+    "SpeedProfile",
     "ClimbProfile",
     "CruiseProfile",
     "DescentProfile",

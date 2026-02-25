@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from ambiance import Atmosphere
 
 @dataclass
 class ClimbProfile:
@@ -18,7 +19,7 @@ class DescentProfile:
     crossover_mach: float = 0.0
 
 @dataclass
-class MissionProfile:
+class SpeedProfile:
     climb: ClimbProfile = None
     cruise: CruiseProfile = None
     descent: DescentProfile = None
