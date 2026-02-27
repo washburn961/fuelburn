@@ -1,8 +1,12 @@
-test.py
 __pycache__/
 *.pyc
 *.pyo
 *.egg-info/
 dist/
 build/
-tests/
+tests/*.csv
+tests/*.png
+tests/cost_tool.py
+tests/designAnalysis.py
+tests/designTool_merged.py
+tests/test_145xr.py
