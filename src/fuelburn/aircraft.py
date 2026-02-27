@@ -32,6 +32,7 @@ class AircraftSpec:
     typical_climb_kcas_low: float = 250.0
     typical_climb_kcas_high: float = 280.0
     typical_climb_mach: float = 0.78
+    tsfc_sl: float = 2e-5  # kg/(N·s)
 
 
 class Aircraft:
@@ -154,7 +155,8 @@ class Aircraft:
             max_cruise_altitude_ft=spec.max_cruise_altitude_ft,
             typical_climb_kcas_low=spec.typical_climb_kcas_low,
             typical_climb_kcas_high=spec.typical_climb_kcas_high,
-            typical_climb_mach=spec.typical_climb_mach
+            typical_climb_mach=spec.typical_climb_mach,
+            tsfc_sl=spec.tsfc_sl,
         )
     
     def fly(self, mission, max_time_s: float = 14400.0, verbose: bool = True):

@@ -176,5 +176,5 @@ def print_presets():
     print("=" * 60)
     for key in sorted(AIRCRAFT_PRESETS.keys()):
         spec = AIRCRAFT_PRESETS[key]
-        print(f"{key:15} - {spec.name:30} MTOW: {spec.mtow_kg:>7,.0f} kg")
+        print(f"{key:15} - {spec.name:30}")
     print("=" * 60)
