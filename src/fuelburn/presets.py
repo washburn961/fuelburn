@@ -2,12 +2,12 @@
 Aircraft presets database.
 """
 
-from .aircraft import AircraftSpec
+from .aircraft import Aircraft
 
 
 # Aircraft presets database
 AIRCRAFT_PRESETS = {
-    'B737-800': AircraftSpec(
+    'B737-800': Aircraft(
         name='Boeing 737-800',
         wing_area_m2=124.6,
         thrust_per_engine_N=121400,  # CFM56-7B27
@@ -22,7 +22,7 @@ AIRCRAFT_PRESETS = {
         typical_climb_mach=0.78
     ),
     
-    'A320': AircraftSpec(
+    'A320': Aircraft(
         name='Airbus A320-200',
         wing_area_m2=122.6,
         thrust_per_engine_N=120100,  # CFM56-5B4
@@ -37,7 +37,7 @@ AIRCRAFT_PRESETS = {
         typical_climb_mach=0.78
     ),
     
-    'B777-300ER': AircraftSpec(
+    'B777-300ER': Aircraft(
         name='Boeing 777-300ER',
         wing_area_m2=427.8,
         thrust_per_engine_N=512000,  # GE90-115B
@@ -52,7 +52,7 @@ AIRCRAFT_PRESETS = {
         typical_climb_mach=0.84
     ),
     
-    'A330-300': AircraftSpec(
+    'A330-300': Aircraft(
         name='Airbus A330-300',
         wing_area_m2=361.6,
         thrust_per_engine_N=316000,  # Trent 772B
@@ -67,7 +67,7 @@ AIRCRAFT_PRESETS = {
         typical_climb_mach=0.82
     ),
     
-    'ERJ-145XR': AircraftSpec(
+    'ERJ-145XR': Aircraft(
         name='Embraer ERJ-145XR',
         wing_area_m2=51.18,
         thrust_per_engine_N=39670,  # AE 3007A1E
@@ -82,7 +82,7 @@ AIRCRAFT_PRESETS = {
         typical_climb_mach=0.76
     ),
     
-    'CRJ-900': AircraftSpec(
+    'CRJ-900': Aircraft(
         name='Bombardier CRJ-900',
         wing_area_m2=76.2,
         thrust_per_engine_N=64500,  # CF34-8C5
@@ -97,7 +97,7 @@ AIRCRAFT_PRESETS = {
         typical_climb_mach=0.78
     ),
     
-    'B747-400': AircraftSpec(
+    'B747-400': Aircraft(
         name='Boeing 747-400',
         wing_area_m2=541.1,
         thrust_per_engine_N=282000,  # PW4062
@@ -112,7 +112,7 @@ AIRCRAFT_PRESETS = {
         typical_climb_mach=0.84
     ),
     
-    'A350-900': AircraftSpec(
+    'A350-900': Aircraft(
         name='Airbus A350-900',
         wing_area_m2=442.0,
         thrust_per_engine_N=374000,  # Trent XWB-84
@@ -129,7 +129,7 @@ AIRCRAFT_PRESETS = {
 }
 
 
-def get_aircraft_preset(aircraft_type: str) -> AircraftSpec:
+def get_aircraft_preset(aircraft_type: str) -> Aircraft:
     """
     Get aircraft preset by type.
     
@@ -137,7 +137,7 @@ def get_aircraft_preset(aircraft_type: str) -> AircraftSpec:
         aircraft_type: Aircraft type code (e.g., 'B737-800', 'A320')
     
     Returns:
-        AircraftSpec instance
+        Aircraft instance
     
     Raises:
         ValueError: If aircraft type not found

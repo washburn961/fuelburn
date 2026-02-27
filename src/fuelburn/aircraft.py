@@ -16,28 +16,9 @@ from .simulation import (
     Simulation
 )
 
-
-@dataclass
-class AircraftSpec:
-    """Aircraft specification dataclass."""
-    name: str
-    wing_area_m2: float
-    thrust_per_engine_N: float
-    num_engines: int
-    bypass_ratio: float
-    cd0: float
-    oswald_efficiency: float
-    max_cruise_mach: float
-    max_cruise_altitude_ft: float
-    typical_climb_kcas_low: float = 250.0
-    typical_climb_kcas_high: float = 280.0
-    typical_climb_mach: float = 0.78
-    tsfc_sl: float = 2e-5  # kg/(N·s)
-
-
 class Aircraft:
     """
-    Simplified aircraft class for fuel burn simulation.
+    Aircraft class for fuel burn simulation.
     
     Usage:
         # From preset
@@ -69,7 +50,7 @@ class Aircraft:
         typical_climb_kcas_low: float = 250.0,
         typical_climb_kcas_high: float = 280.0,
         typical_climb_mach: float = 0.78,
-        tsfc_sl: float = 9e-6,
+        tsfc_sl: float = 2e-5,
         drag_fn: Optional[Callable] = None
     ):
         """
