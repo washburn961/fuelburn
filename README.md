@@ -9,13 +9,13 @@ A Python package for aircraft fuel burn simulation and analysis. Provides a simp
 Install directly from the latest GitHub main branch:
 
 ```bash
-pip install git+https://github.com/yourusername/fuelburn.git
+pip install git+https://github.com/washburn961/fuelburn.git
 ```
 
 To upgrade to the latest version:
 
 ```bash
-pip install --upgrade git+https://github.com/yourusername/fuelburn.git
+pip install --upgrade git+https://github.com/washburn961/fuelburn.git
 ```
 
 > **Requirements:** Python 3.7+, [ambiance](https://pypi.org/project/ambiance/), numpy, matplotlib
@@ -176,7 +176,7 @@ aircraft = fb.Aircraft(
 To upgrade to the latest version:
 
 ```bash
-pip install --upgrade git+https://github.com/yourusername/fuelburn.git
+pip install --upgrade git+https://github.com/washburn961/fuelburn.git
 ```
 
 ---
