@@ -221,16 +221,16 @@ class Results:
     
     # ========== Plotting Methods ==========
     
-    def plot(self, figsize=(12, 12)):
+    def plot(self, figsize=(12, 12), save_path: str = None):
         """
         Plot all results in a 3x2 grid.
         
         Args:
             figsize: Figure size (width, height)
+            save_path: Optional path to save the figure
         """
         import matplotlib.pyplot as plt
-        
-        fig, axes = plt.subplots(3, 2, figsize=figsize)
+        fig, axes = plt.subplots(3, 2, figsize=figsize, constrained_layout=True)
         fig.suptitle(f'{self.aircraft.name} - Fuel Burn Simulation Results', 
                      fontsize=14, fontweight='bold')
         
@@ -314,11 +314,20 @@ class Results:
         ax.grid(True, alpha=0.3)
         ax.legend()
         
-        plt.tight_layout()
+        if save_path:
+            fig.savefig(save_path, bbox_inches='tight')
         plt.show()
         return fig, axes
+        def save_plots(self, base_path: str):
+            """
+            Save all plots to files. base_path is used as prefix for filenames.
+            """
+            self.plot(save_path=f"{base_path}_grid.png")
+            self.plot_altitude_profile(save_path=f"{base_path}_altitude.png")
+            self.plot_fuel_burn(save_path=f"{base_path}_fuelburn.png")
+            self.plot_thrust(save_path=f"{base_path}_thrust.png")
     
-    def plot_altitude_profile(self):
+    def plot_altitude_profile(self, save_path: str = None):
         """Plot altitude profile vs distance."""
         import matplotlib.pyplot as plt
         
@@ -337,10 +346,12 @@ class Results:
         ax.grid(True, alpha=0.3)
         ax.legend()
         plt.tight_layout()
+        if save_path:
+            fig.savefig(save_path, bbox_inches='tight')
         plt.show()
         return fig, ax
     
-    def plot_fuel_burn(self):
+    def plot_fuel_burn(self, save_path: str = None):
         """Plot cumulative fuel burn vs distance."""
         import matplotlib.pyplot as plt
         
@@ -359,10 +370,12 @@ class Results:
         ax.grid(True, alpha=0.3)
         ax.legend()
         plt.tight_layout()
+        if save_path:
+            fig.savefig(save_path, bbox_inches='tight')
         plt.show()
         return fig, ax
     
-    def plot_thrust(self):
+    def plot_thrust(self, save_path: str = None):
         """Plot thrust profile vs distance."""
         import matplotlib.pyplot as plt
         
@@ -381,6 +394,8 @@ class Results:
         ax.grid(True, alpha=0.3)
         ax.legend()
         plt.tight_layout()
+        if save_path:
+            fig.savefig(save_path, bbox_inches='tight')
         plt.show()
         return fig, ax
     
