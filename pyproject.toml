@@ -9,6 +9,8 @@ description = "Fuel burn calculation package"
 requires-python = ">=3.7"
 dependencies = [
     "ambiance",
+    "matplotlib",
+    "numpy"
 ]
 
 [tool.setuptools]
