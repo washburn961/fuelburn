@@ -9,14 +9,14 @@ import fuelburn as fb
 # ===== BRAIN-DEAD SIMPLE APPROACH =====
 
 # Use a preset aircraft
-aircraft = fb.Aircraft.from_preset('CRJ-900')
+aircraft = fb.Aircraft.from_preset('ERJ-145XR')
 
 # Define mission
 mission = fb.Mission(
     distance=629,  # nm  
-    cruise_altitude=36000,  # ft
-    cruise_mach=0.77,
-    initial_weight_kg=35901,  # kg
+    cruise_altitude=32000,  # ft
+    cruise_mach=0.76,
+    initial_weight_kg=20000,  # kg
 )
 
 # Fly it!
@@ -41,7 +41,3 @@ print(f"Average fuel flow: {results.avg_fuel_flow_kg_hr:,.0f} kg/hr")
 
 # Export to CSV
 # results.to_csv('mission_results.csv')
-
-# ===== SEE AVAILABLE PRESETS =====
-print("\n")
-fb.print_presets()

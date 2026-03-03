@@ -51,6 +51,8 @@ class Aircraft:
         typical_climb_kcas_high: float = 280.0,
         typical_climb_mach: float = 0.78,
         tsfc_sl: float = 2e-5,
+        climb_tla: float = 1.0,
+        descent_tla: float = 0.10,
         drag_fn: Optional[Callable] = None
     ):
         """
@@ -107,7 +109,9 @@ class Aircraft:
         self.propulsion = Propulsion(
             BPR=bypass_ratio,
             Tmax_sl_total=self.total_thrust_N,
-            TSFC_sl=tsfc_sl
+            TSFC_sl=tsfc_sl,
+            climb_tla=climb_tla,
+            descent_tla=descent_tla
         )
     
     @classmethod

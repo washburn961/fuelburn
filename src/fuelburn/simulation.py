@@ -243,12 +243,16 @@ class Propulsion:
       - TSFC(mach: float, altitude_m: float) -> float
     """
 
-    def __init__(self, BPR: float, Tmax_sl_total: float, TSFC_sl: float):
+    def __init__(self, BPR: float, Tmax_sl_total: float, TSFC_sl: float,
+                 climb_tla : float,
+                 descent_tla: float):
         self.BPR = float(BPR)
         self.T_sl_static_total = float(Tmax_sl_total)
         self.TSFC_sl = float(TSFC_sl)
         # Reference sea-level density used in the original correlation (Howe)
         self.rho0_ref = 1.225
+        self.climb_tla = climb_tla
+        self.descent_tla = descent_tla
 
     # -------------------- internals --------------------
 
@@ -349,7 +353,7 @@ def odefun_climb(
     M = V / a
 
     # Thrust at climb (e.g., 90% TLA)
-    T = propulsion.thrust(mach=M, altitude_m=h, thrust_lever=1.0)  # N
+    T = propulsion.thrust(mach=M, altitude_m=h, thrust_lever=propulsion.climb_tla)  # N
 
     # Lift with small-gamma approx
     L = W
@@ -414,7 +418,7 @@ def odefun_descent(
     M = V / a
 
     # Idle-ish thrust
-    T = propulsion.thrust(mach=M, altitude_m=h, thrust_lever=0.10)
+    T = propulsion.thrust(mach=M, altitude_m=h, thrust_lever=propulsion.descent_tla)
 
     L = W
     D = aerodynamics.drag(mach=M, altitude_m=h, weight=L)  # N
