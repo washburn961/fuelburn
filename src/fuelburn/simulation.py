@@ -274,7 +274,7 @@ class Propulsion:
 
         # TSFC correlation (Howe-like)
         C = (
-            1.9 * Cbase
+            1.55 * Cbase
             * (1.0 - 0.15 * (BPR ** 0.65))
             * (1.0 + 0.28 * (1.0 + 0.063 * (BPR ** 2)) * Mach)
             * (sigma ** 0.08)
@@ -298,7 +298,7 @@ class Propulsion:
         else:
             kT = 0.2
 
-        return kT * 1.25
+        return kT * 1.5
 
     # -------------------- public API --------------------
 
