@@ -35,7 +35,9 @@ class Mission:
         cruise_altitude_m: float = None,
         cruise_mach: float = 0.78,
         initial_weight_kg: float = None,
-        initial_altitude_m: float = 0.0
+        initial_altitude_m: float = 0.0,
+        taxi_out_time_s: float = 600.0,
+        taxi_in_time_s: float = 300.0
     ):
         """
         Initialize mission.
@@ -51,6 +53,8 @@ class Mission:
             cruise_mach: Cruise Mach number
             initial_weight_kg: Takeoff weight [kg]
             initial_altitude_m: Initial altitude [m] (after takeoff)
+            taxi_out_time_s: Taxi-out time [s] (default: 600s / 10 min)
+            taxi_in_time_s: Taxi-in time [s] (default: 300s / 5 min)
         """
         # Handle distance with smart unit detection
         if distance is not None:
@@ -85,6 +89,8 @@ class Mission:
         self.cruise_mach = cruise_mach
         self.initial_weight_kg = initial_weight_kg
         self.initial_altitude_m = initial_altitude_m
+        self.taxi_out_time_s = taxi_out_time_s
+        self.taxi_in_time_s = taxi_in_time_s
     
     def __repr__(self) -> str:
         return (

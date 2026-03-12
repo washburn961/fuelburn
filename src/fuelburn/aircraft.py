@@ -13,6 +13,7 @@ from .simulation import (
     ClimbProfile,
     CruiseProfile,
     DescentProfile,
+    TaxiProfile,
     Simulation
 )
 
@@ -53,6 +54,7 @@ class Aircraft:
         tsfc_sl: float = 2e-5,
         climb_tla: float = 1.0,
         descent_tla: float = 0.10,
+        taxi_tla: float = 0.07,
         drag_fn: Optional[Callable] = None
     ):
         """
@@ -72,6 +74,9 @@ class Aircraft:
             typical_climb_kcas_high: Climb speed at crossover [KCAS]
             typical_climb_mach: Climb Mach above crossover
             tsfc_sl: Sea-level TSFC [kg/(N·s)]
+            climb_tla: Climb thrust lever angle [0-1]
+            descent_tla: Descent thrust lever angle [0-1]
+            taxi_tla: Taxi thrust lever angle [0-1]
             drag_fn: Optional custom drag function
         """
         self.name = name
@@ -87,6 +92,9 @@ class Aircraft:
         self.typical_climb_kcas_high = typical_climb_kcas_high
         self.typical_climb_mach = typical_climb_mach
         self.tsfc_sl = tsfc_sl
+        self.climb_tla = climb_tla
+        self.descent_tla = descent_tla
+        self.taxi_tla = taxi_tla
         self._custom_drag_fn = drag_fn
         
         # Computed properties
@@ -111,7 +119,8 @@ class Aircraft:
             Tmax_sl_total=self.total_thrust_N,
             TSFC_sl=tsfc_sl,
             climb_tla=climb_tla,
-            descent_tla=descent_tla
+            descent_tla=descent_tla,
+            taxi_tla=taxi_tla
         )
     
     @classmethod
@@ -180,10 +189,17 @@ class Aircraft:
             crossover_mach=self.typical_climb_mach
         )
         
+        taxi_prof = TaxiProfile(
+            taxi_out_time_s=mission.taxi_out_time_s,
+            taxi_in_time_s=mission.taxi_in_time_s,
+            taxi_tla=self.taxi_tla
+        )
+        
         speed_profile = SpeedProfile(
             climb=climb_prof,
             cruise=cruise_prof,
             descent=descent_prof,
+            taxi=taxi_prof,
             transition_altitude_ft=10000.0
         )
         

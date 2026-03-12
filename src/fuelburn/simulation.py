@@ -25,10 +25,17 @@ class DescentProfile:
     crossover_mach: float = 0.56
 
 @dataclass
+class TaxiProfile:
+    taxi_out_time_s: float = 600.0  # 10 minutes default
+    taxi_in_time_s: float = 300.0   # 5 minutes default
+    taxi_tla: float = 0.07          # 7% thrust for taxi
+
+@dataclass
 class SpeedProfile:
     climb: Optional[ClimbProfile] = None
     cruise: Optional[CruiseProfile] = None
     descent: Optional[DescentProfile] = None
+    taxi: Optional[TaxiProfile] = None
     transition_altitude_ft: float = 10000.0
 
     def _ft_to_m(self, ft: float) -> float:
@@ -139,9 +146,11 @@ class SpeedProfile:
             return V
 
 class FlightPhase(str, Enum):
+    TAXI_OUT = "taxi_out"
     CLB = "clb"
     CRZ = "crz"
     DES = "des"
+    TAXI_IN = "taxi_in"
 
 # ---------- Models ----------
 
@@ -245,7 +254,8 @@ class Propulsion:
 
     def __init__(self, BPR: float, Tmax_sl_total: float, TSFC_sl: float,
                  climb_tla : float,
-                 descent_tla: float):
+                 descent_tla: float,
+                 taxi_tla: float = 0.07):
         self.BPR = float(BPR)
         self.T_sl_static_total = float(Tmax_sl_total)
         self.TSFC_sl = float(TSFC_sl)
@@ -253,6 +263,7 @@ class Propulsion:
         self.rho0_ref = 1.225
         self.climb_tla = climb_tla
         self.descent_tla = descent_tla
+        self.taxi_tla = taxi_tla
 
     # -------------------- internals --------------------
 
@@ -274,7 +285,7 @@ class Propulsion:
 
         # TSFC correlation (Howe-like)
         C = (
-            1.55 * Cbase
+            1.48 * Cbase
             * (1.0 - 0.15 * (BPR ** 0.65))
             * (1.0 + 0.28 * (1.0 + 0.063 * (BPR ** 2)) * Mach)
             * (sigma ** 0.08)
@@ -430,6 +441,76 @@ def odefun_descent(
 
     return np.array([m_dot, h_dot, d_dot], dtype=float)
 
+def odefun_taxi_out(
+    t: float,
+    state: np.ndarray,
+    aerodynamics: Aerodynamics,
+    propulsion: Propulsion,
+    speed_schedule: SpeedProfile
+) -> np.ndarray:
+    """
+    Taxi-out ODE: only fuel burn, no altitude or distance change.
+    
+    States:
+      state[0] = m [kg]
+      state[1] = h [m] (constant, ground level)
+      state[2] = d [m] (constant during taxi)
+    
+    Returns:
+      [dm/dt, dh/dt, dd/dt]
+    """
+    m, h, d = state
+
+    # Ground level conditions (h should be near zero)
+    M = 0.0  # Stationary for TSFC calculation
+    
+    # Taxi thrust at ground level
+    T = propulsion.thrust(mach=M, altitude_m=h, thrust_lever=propulsion.taxi_tla)
+    
+    # Fuel burn rate
+    m_dot = -propulsion.TSFC(mach=M, altitude_m=h) * T
+    
+    # No altitude or distance change during taxi
+    h_dot = 0.0
+    d_dot = 0.0
+    
+    return np.array([m_dot, h_dot, d_dot], dtype=float)
+
+def odefun_taxi_in(
+    t: float,
+    state: np.ndarray,
+    aerodynamics: Aerodynamics,
+    propulsion: Propulsion,
+    speed_schedule: SpeedProfile
+) -> np.ndarray:
+    """
+    Taxi-in ODE: only fuel burn, no altitude or distance change.
+    
+    States:
+      state[0] = m [kg]
+      state[1] = h [m] (constant, ground level)
+      state[2] = d [m] (constant during taxi)
+    
+    Returns:
+      [dm/dt, dh/dt, dd/dt]
+    """
+    m, h, d = state
+
+    # Ground level conditions (h should be near zero)
+    M = 0.0  # Stationary for TSFC calculation
+    
+    # Taxi thrust at ground level
+    T = propulsion.thrust(mach=M, altitude_m=h, thrust_lever=propulsion.taxi_tla)
+    
+    # Fuel burn rate
+    m_dot = -propulsion.TSFC(mach=M, altitude_m=h) * T
+    
+    # No altitude or distance change during taxi
+    h_dot = 0.0
+    d_dot = 0.0
+    
+    return np.array([m_dot, h_dot, d_dot], dtype=float)
+
 # ---------- Simulation shell ----------
 
 class Simulation:
@@ -501,6 +582,46 @@ class Simulation:
         # Initial state: [mass, altitude, distance]
         state0 = np.array([initial_mass_kg, initial_altitude_m, 0.0])
         t0 = 0.0
+        
+        # ========== PHASE 0: TAXI OUT ==========
+        if self.speed_profile.taxi is not None:
+            taxi_out_time = self.speed_profile.taxi.taxi_out_time_s
+            print(f"Starting TAXI OUT for {taxi_out_time:.0f} s at {initial_altitude_m:.0f} m")
+            
+            def taxi_out_ode(t, state):
+                return odefun_taxi_out(t, state, self.aero, self.prop, self.speed_profile)
+            
+            sol_taxi_out = solve_ivp(
+                taxi_out_ode,
+                (t0, t0 + taxi_out_time),
+                state0,
+                method='RK45',
+                dense_output=True,
+                max_step=10.0  # 10 second max time step for taxi
+            )
+            
+            # Store taxi out results
+            for i in range(len(sol_taxi_out.t)):
+                m_i = sol_taxi_out.y[0, i]
+                h_i = sol_taxi_out.y[1, i]
+                d_i = sol_taxi_out.y[2, i]
+                
+                # Calculate thrust and TSFC at ground level
+                T_i = self.prop.thrust(mach=0.0, altitude_m=h_i, thrust_lever=self.prop.taxi_tla)
+                tsfc_i = self.prop.TSFC(mach=0.0, altitude_m=h_i)
+                
+                results['t'].append(sol_taxi_out.t[i])
+                results['m'].append(m_i)
+                results['h'].append(h_i)
+                results['d'].append(d_i)
+                results['phase'].append('TAXI_OUT')
+                results['thrust'].append(T_i)
+                results['tsfc'].append(tsfc_i)
+            
+            # Update initial state for climb
+            state0 = sol_taxi_out.y[:, -1]
+            t0 = sol_taxi_out.t[-1]
+            print(f"Taxi out complete at t={t0:.0f} s, fuel burned: {initial_mass_kg - state0[0]:.1f} kg")
         
         # ========== PHASE 1: CLIMB ==========
         print(f"Starting CLIMB from {initial_altitude_m:.0f} m to {cruise_alt_m:.0f} m")
@@ -661,10 +782,71 @@ class Simulation:
         if sol_descent.t_events[0].size > 0:
             t_final = sol_descent.t_events[0][0]
             state_final = sol_descent.sol(t_final)
-            print(f"Landed at t={t_final:.0f} s, d={state_final[2]/1000:.1f} km")
-            print(f"Final mass: {state_final[0]:.0f} kg")
-            print(f"Fuel burned: {initial_mass_kg - state_final[0]:.0f} kg")
+            fuel_at_landing = initial_mass_kg - state_final[0]
+            print(f"Landed at t={t_final:.0f} s, d={state_final[2]/1000:.1f} km, fuel burned: {fuel_at_landing:.1f} kg")
         else:
             print("Warning: Did not complete descent")
+            state_final = sol_descent.y[:, -1]
+            t_final = sol_descent.t[-1]
+        
+        # ========== PHASE 4: TAXI IN ==========
+        if self.speed_profile.taxi is not None:
+            taxi_in_time = self.speed_profile.taxi.taxi_in_time_s
+            print(f"Starting TAXI IN for {taxi_in_time:.0f} s")
+            
+            mass_before_taxi_in = state_final[0]
+            
+            def taxi_in_ode(t, state):
+                return odefun_taxi_in(t, state, self.aero, self.prop, self.speed_profile)
+            
+            sol_taxi_in = solve_ivp(
+                taxi_in_ode,
+                (t_final, t_final + taxi_in_time),
+                state_final,
+                method='RK45',
+                dense_output=True,
+                max_step=10.0  # 10 second max time step for taxi
+            )
+            
+            # Store taxi in results (skip first point to avoid duplication)
+            for i in range(1, len(sol_taxi_in.t)):
+                m_i = sol_taxi_in.y[0, i]
+                h_i = sol_taxi_in.y[1, i]
+                d_i = sol_taxi_in.y[2, i]
+                
+                # Calculate thrust and TSFC at ground level
+                T_i = self.prop.thrust(mach=0.0, altitude_m=h_i, thrust_lever=self.prop.taxi_tla)
+                tsfc_i = self.prop.TSFC(mach=0.0, altitude_m=h_i)
+                
+                results['t'].append(sol_taxi_in.t[i])
+                results['m'].append(m_i)
+                results['h'].append(h_i)
+                results['d'].append(d_i)
+                results['phase'].append('TAXI_IN')
+                results['thrust'].append(T_i)
+                results['tsfc'].append(tsfc_i)
+            
+            # Update final state
+            state_final = sol_taxi_in.y[:, -1]
+            t_final = sol_taxi_in.t[-1]
+            taxi_in_fuel = mass_before_taxi_in - state_final[0]
+            print(f"Taxi in complete at t={t_final:.0f} s, fuel burned: {taxi_in_fuel:.1f} kg")
+        
+        print("\n" + "="*60)
+        print("MISSION SUMMARY")
+        print("="*60)
+        print(f"Final mass:       {state_final[0]:.0f} kg")
+        print(f"Total fuel burned: {initial_mass_kg - state_final[0]:.0f} kg")
+        print(f"Block time:       {t_final/60:.1f} min ({t_final/3600:.2f} hr)")
+        
+        # Calculate air time (excluding taxi)
+        phases_array = np.array(results['phase'])
+        times_array = np.array(results['t'])
+        air_mask = (phases_array == 'CLB') | (phases_array == 'CRZ') | (phases_array == 'DES')
+        if np.any(air_mask):
+            air_times = times_array[air_mask]
+            air_time = air_times[-1] - air_times[0]
+            print(f"Air time:         {air_time/60:.1f} min ({air_time/3600:.2f} hr)")
+        print("="*60 + "\n")
         
         return results

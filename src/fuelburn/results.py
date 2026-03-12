@@ -180,6 +180,11 @@ class Results:
     # ========== Phase Masks ==========
     
     @property
+    def taxi_out_mask(self) -> np.ndarray:
+        """Boolean mask for taxi-out phase."""
+        return self.phase == 'TAXI_OUT'
+    
+    @property
     def climb_mask(self) -> np.ndarray:
         """Boolean mask for climb phase."""
         return self.phase == 'CLB'
@@ -194,6 +199,53 @@ class Results:
         """Boolean mask for descent phase."""
         return self.phase == 'DES'
     
+    @property
+    def taxi_in_mask(self) -> np.ndarray:
+        """Boolean mask for taxi-in phase."""
+        return self.phase == 'TAXI_IN'
+    
+    # ========== Air Time (excluding taxi) ==========
+    
+    @property
+    def air_time_s(self) -> float:
+        """Air time [s] - excludes taxi phases."""
+        air_mask = (self.phase == 'CLB') | (self.phase == 'CRZ') | (self.phase == 'DES')
+        if np.any(air_mask):
+            air_times = self.t[air_mask]
+            return air_times[-1] - air_times[0]
+        return 0.0
+    
+    @property
+    def air_time_min(self) -> float:
+        """Air time [min] - excludes taxi phases."""
+        return self.air_time_s / 60.0
+    
+    @property
+    def air_time_hr(self) -> float:
+        """Air time [hr] - excludes taxi phases."""
+        return self.air_time_s / 3600.0
+    
+    @property
+    def taxi_out_time_s(self) -> float:
+        """Taxi-out time [s]."""
+        if np.any(self.taxi_out_mask):
+            taxi_times = self.t[self.taxi_out_mask]
+            return taxi_times[-1] - taxi_times[0]
+        return 0.0
+    
+    @property
+    def taxi_in_time_s(self) -> float:
+        """Taxi-in time [s]."""
+        if np.any(self.taxi_in_mask):
+            taxi_times = self.t[self.taxi_in_mask]
+            return taxi_times[-1] - taxi_times[0]
+        return 0.0
+    
+    @property
+    def total_taxi_time_s(self) -> float:
+        """Total taxi time [s]."""
+        return self.taxi_out_time_s + self.taxi_in_time_s
+    
     # ========== Display Methods ==========
     
     def __repr__(self) -> str:
@@ -206,6 +258,9 @@ class Results:
             f"Mission:  {self.mission.distance_nm:.0f} nm @ FL{int(self.mission.cruise_altitude_ft/100)} M{self.mission.cruise_mach:.2f}",
             "-" * 60,
             f"Block time:       {self.block_time_hr:.2f} hr ({self.block_time_min:.1f} min)",
+            f"Air time:         {self.air_time_hr:.2f} hr ({self.air_time_min:.1f} min)",
+            f"  Taxi-out:       {self.taxi_out_time_s:.0f} s",
+            f"  Taxi-in:        {self.taxi_in_time_s:.0f} s",
             f"Fuel burned:      {self.fuel_burned_kg:,.0f} kg ({self.fuel_burned_lb:,.0f} lb)",
             f"Avg fuel flow:    {self.avg_fuel_flow_kg_hr:,.0f} kg/hr ({self.avg_fuel_flow_lb_hr:,.0f} lb/hr)",
             f"Distance flown:   {self.distance_flown_nm:.1f} nm ({self.distance_flown_km:.1f} km)",
@@ -234,15 +289,16 @@ class Results:
         fig.suptitle(f'{self.aircraft.name} - Fuel Burn Simulation Results', 
                      fontsize=14, fontweight='bold')
         
-        colors = {'CLB': 'blue', 'CRZ': 'green', 'DES': 'orange'}
+        colors = {'TAXI_OUT': 'gray', 'CLB': 'blue', 'CRZ': 'green', 'DES': 'orange', 'TAXI_IN': 'gray'}
         
         # Plot 1: Altitude vs Distance
         ax = axes[0, 0]
         for phase, color in colors.items():
             mask = self.phase == phase
             if np.any(mask):
+                label = 'TAXI' if phase == 'TAXI_OUT' else (None if phase == 'TAXI_IN' else phase)
                 ax.plot(self.distance_nm[mask], self.altitude_ft[mask] / 1000.0, 
-                       color=color, linewidth=2, label=phase)
+                       color=color, linewidth=2, label=label)
         ax.set_xlabel('Distance [nm]')
         ax.set_ylabel('Altitude [1000 ft]')
         ax.set_title('Altitude Profile')
@@ -254,8 +310,9 @@ class Results:
         for phase, color in colors.items():
             mask = self.phase == phase
             if np.any(mask):
+                label = 'TAXI' if phase == 'TAXI_OUT' else (None if phase == 'TAXI_IN' else phase)
                 ax.plot(self.time_min[mask], self.mass_tonnes[mask], 
-                       color=color, linewidth=2, label=phase)
+                       color=color, linewidth=2, label=label)
         ax.set_xlabel('Time [min]')
         ax.set_ylabel('Mass [tonnes]')
         ax.set_title('Aircraft Mass')
@@ -267,8 +324,9 @@ class Results:
         for phase, color in colors.items():
             mask = self.phase == phase
             if np.any(mask):
+                label = 'TAXI' if phase == 'TAXI_OUT' else (None if phase == 'TAXI_IN' else phase)
                 ax.plot(self.distance_nm[mask], self.fuel_burned_tonnes[mask], 
-                       color=color, linewidth=2, label=phase)
+                       color=color, linewidth=2, label=label)
         ax.set_xlabel('Distance [nm]')
         ax.set_ylabel('Fuel Burned [tonnes]')
         ax.set_title('Cumulative Fuel Burn')
@@ -280,8 +338,9 @@ class Results:
         for phase, color in colors.items():
             mask = self.phase == phase
             if np.any(mask):
+                label = 'TAXI' if phase == 'TAXI_OUT' else (None if phase == 'TAXI_IN' else phase)
                 ax.plot(self.time_min[mask], self.altitude_ft[mask] / 1000.0, 
-                       color=color, linewidth=2, label=phase)
+                       color=color, linewidth=2, label=label)
         ax.set_xlabel('Time [min]')
         ax.set_ylabel('Altitude [1000 ft]')
         ax.set_title('Altitude vs Time')
@@ -293,8 +352,9 @@ class Results:
         for phase, color in colors.items():
             mask = self.phase == phase
             if np.any(mask):
+                label = 'TAXI' if phase == 'TAXI_OUT' else (None if phase == 'TAXI_IN' else phase)
                 ax.plot(self.distance_nm[mask], self.thrust_kn[mask], 
-                       color=color, linewidth=2, label=phase)
+                       color=color, linewidth=2, label=label)
         ax.set_xlabel('Distance [nm]')
         ax.set_ylabel('Thrust [kN]')
         ax.set_title('Thrust Profile')
@@ -306,8 +366,9 @@ class Results:
         for phase, color in colors.items():
             mask = self.phase == phase
             if np.any(mask):
+                label = 'TAXI' if phase == 'TAXI_OUT' else (None if phase == 'TAXI_IN' else phase)
                 ax.plot(self.distance_nm[mask], self.tsfc_kg_n_hr[mask], 
-                       color=color, linewidth=2, label=phase)
+                       color=color, linewidth=2, label=label)
         ax.set_xlabel('Distance [nm]')
         ax.set_ylabel('TSFC [kg/(N·hr)]')
         ax.set_title('TSFC Profile')
@@ -332,13 +393,14 @@ class Results:
         import matplotlib.pyplot as plt
         
         fig, ax = plt.subplots(figsize=(10, 6))
-        colors = {'CLB': 'blue', 'CRZ': 'green', 'DES': 'orange'}
+        colors = {'TAXI_OUT': 'gray', 'CLB': 'blue', 'CRZ': 'green', 'DES': 'orange', 'TAXI_IN': 'gray'}
         
         for phase, color in colors.items():
             mask = self.phase == phase
             if np.any(mask):
+                label = 'TAXI' if phase == 'TAXI_OUT' else (None if phase == 'TAXI_IN' else phase)
                 ax.plot(self.distance_nm[mask], self.altitude_ft[mask] / 1000.0,
-                       color=color, linewidth=2, label=phase)
+                       color=color, linewidth=2, label=label)
         
         ax.set_xlabel('Distance [nm]')
         ax.set_ylabel('Altitude [1000 ft]')
@@ -356,13 +418,14 @@ class Results:
         import matplotlib.pyplot as plt
         
         fig, ax = plt.subplots(figsize=(10, 6))
-        colors = {'CLB': 'blue', 'CRZ': 'green', 'DES': 'orange'}
+        colors = {'TAXI_OUT': 'gray', 'CLB': 'blue', 'CRZ': 'green', 'DES': 'orange', 'TAXI_IN': 'gray'}
         
         for phase, color in colors.items():
             mask = self.phase == phase
             if np.any(mask):
+                label = 'TAXI' if phase == 'TAXI_OUT' else (None if phase == 'TAXI_IN' else phase)
                 ax.plot(self.distance_nm[mask], self.fuel_burned_tonnes[mask],
-                       color=color, linewidth=2, label=phase)
+                       color=color, linewidth=2, label=label)
         
         ax.set_xlabel('Distance [nm]')
         ax.set_ylabel('Fuel Burned [tonnes]')
@@ -380,13 +443,14 @@ class Results:
         import matplotlib.pyplot as plt
         
         fig, ax = plt.subplots(figsize=(10, 6))
-        colors = {'CLB': 'blue', 'CRZ': 'green', 'DES': 'orange'}
+        colors = {'TAXI_OUT': 'gray', 'CLB': 'blue', 'CRZ': 'green', 'DES': 'orange', 'TAXI_IN': 'gray'}
         
         for phase, color in colors.items():
             mask = self.phase == phase
             if np.any(mask):
+                label = 'TAXI' if phase == 'TAXI_OUT' else (None if phase == 'TAXI_IN' else phase)
                 ax.plot(self.distance_nm[mask], self.thrust_kn[mask],
-                       color=color, linewidth=2, label=phase)
+                       color=color, linewidth=2, label=label)
         
         ax.set_xlabel('Distance [nm]')
         ax.set_ylabel('Thrust [kN]')
