@@ -1,5 +1,5 @@
 # Simplified API (recommended for most users)
-from .aircraft import Aircraft
+from .aircraft import Aircraft, RequiredFuelSolution
 from .mission import Mission
 from .results import Results
 from .presets import list_presets, print_presets, get_aircraft_preset
@@ -22,6 +22,7 @@ from .simulation import (
 __all__ = [
     # Simplified API
     "Aircraft",
+    "RequiredFuelSolution",
     "Mission",
     "Results",
     "list_presets",

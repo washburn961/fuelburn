@@ -74,7 +74,54 @@ aircraft = fb.Aircraft.from_preset('A320')
 
 ---
 
-### 3. Custom Aircraft and Mission
+### 3. Required Fuel Sizing (OEW + Payload)
+
+Use `solve_required_fuel()` when you know operating empty weight and payload,
+and want the package to solve for departure fuel and takeoff weight.
+
+Default policy is FAA Part 121 domestic-style simplification:
+- Primary block fuel (trip + taxi)
+- Alternate trip fuel (explicit alternate mission required)
+- 45-minute final reserve at normal cruise fuel flow
+- Contingency on primary mission: default 5% of trip fuel (excluding taxi), or configurable time-based contingency via `contingency_minutes`
+
+```python
+import fuelburn as fb
+
+aircraft = fb.Aircraft.from_preset('ERJ-145XR')
+
+primary = fb.Mission(
+    distance_nm=450,
+    cruise_altitude_ft=33000,
+    cruise_mach=0.76,
+)
+
+# Model alternate as airborne diversion profile (set taxi as needed)
+alternate = fb.Mission(
+    distance_nm=90,
+    cruise_altitude_ft=20000,
+    cruise_mach=0.70,
+    taxi_out_time_s=0.0,
+    taxi_in_time_s=0.0,
+)
+
+solution = aircraft.solve_required_fuel(
+    mission=primary,
+    empty_weight_kg=12500,
+    payload_kg=3000,
+    alternate_mission=alternate,
+    reserve_minutes=30,
+    contingency_minutes=15,
+)
+
+print(solution.required_fuel_kg)
+print(solution.takeoff_weight_kg)
+print(solution.to_dict())
+```
+
+---
+
+### 4. Custom Aircraft and Mission
 
 ```python
 import fuelburn as fb
@@ -111,7 +158,7 @@ results.plot()
 
 ---
 
-### 4. Accessing Results Data
+### 5. Accessing Results Data
 
 ```python
 # After running a simulation:
@@ -127,7 +174,7 @@ fuel_burn = results.fuel_burned  # kg
 
 ---
 
-### 5. Advanced: Custom Drag Function
+### 6. Advanced: Custom Drag Function
 
 ```python
 from ambiance import Atmosphere

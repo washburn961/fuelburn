@@ -176,6 +176,74 @@ class Results:
     def fuel_burned_tonnes(self) -> np.ndarray:
         """Cumulative fuel burned [tonnes]."""
         return self.fuel_burned / 1000.0
+
+    @property
+    def taxi_out_fuel_kg(self) -> float:
+        """Fuel burned during taxi-out [kg]."""
+        idx = np.where(self.taxi_out_mask)[0]
+        if idx.size == 0:
+            return 0.0
+        return float(self.m[idx[0]] - self.m[idx[-1]])
+
+    @property
+    def taxi_in_fuel_kg(self) -> float:
+        """Fuel burned during taxi-in [kg]."""
+        idx = np.where(self.taxi_in_mask)[0]
+        if idx.size == 0:
+            return 0.0
+        return float(self.m[idx[0]] - self.m[idx[-1]])
+
+    @property
+    def total_taxi_fuel_kg(self) -> float:
+        """Total taxi fuel (taxi-out + taxi-in) [kg]."""
+        return self.taxi_out_fuel_kg + self.taxi_in_fuel_kg
+
+    @property
+    def trip_fuel_kg(self) -> float:
+        """Trip fuel excluding taxi phases [kg]."""
+        return max(self.fuel_burned_kg - self.total_taxi_fuel_kg, 0.0)
+
+    @property
+    def landing_mass_kg(self) -> float:
+        """Mass at landing before taxi-in starts [kg]."""
+        idx = np.where(self.descent_mask)[0]
+        if idx.size == 0:
+            return self.final_mass_kg
+        return float(self.m[idx[-1]])
+
+    @property
+    def cruise_fuel_flow_kg_hr(self) -> float:
+        """Average fuel flow during cruise phase [kg/hr], NaN if unavailable."""
+        idx = np.where(self.cruise_mask)[0]
+        if idx.size < 2:
+            return float('nan')
+
+        fuel_burn_kg = float(self.m[idx[0]] - self.m[idx[-1]])
+        dt_s = float(self.t[idx[-1]] - self.t[idx[0]])
+        if dt_s <= 0.0:
+            return float('nan')
+
+        return fuel_burn_kg / (dt_s / 3600.0)
+
+    @property
+    def airborne_avg_fuel_flow_kg_hr(self) -> float:
+        """Average airborne fuel flow (climb + cruise + descent) [kg/hr], NaN if unavailable."""
+        if self.air_time_hr <= 0.0:
+            return float('nan')
+        return self.trip_fuel_kg / self.air_time_hr
+
+    @property
+    def normal_cruise_fuel_flow_kg_hr(self) -> float:
+        """Preferred reserve flow source: cruise flow, fallback to airborne average [kg/hr]."""
+        cruise_flow = self.cruise_fuel_flow_kg_hr
+        if np.isfinite(cruise_flow) and cruise_flow > 0.0:
+            return cruise_flow
+
+        airborne_flow = self.airborne_avg_fuel_flow_kg_hr
+        if np.isfinite(airborne_flow) and airborne_flow > 0.0:
+            return airborne_flow
+
+        return float('nan')
     
     # ========== Phase Masks ==========
     

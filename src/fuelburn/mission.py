@@ -93,9 +93,14 @@ class Mission:
         self.taxi_in_time_s = taxi_in_time_s
     
     def __repr__(self) -> str:
+        takeoff_weight = (
+            f"{self.initial_weight_kg:.0f} kg"
+            if self.initial_weight_kg is not None
+            else "unspecified"
+        )
         return (
             f"Mission("\
             f"distance={self.distance_nm:.0f} nm, "\
             f"cruise=FL{int(self.cruise_altitude_ft/100)} @ M{self.cruise_mach:.2f}, "\
-            f"takeoff_weight={self.initial_weight_kg:.0f} kg)"
+            f"takeoff_weight={takeoff_weight})"
         )
